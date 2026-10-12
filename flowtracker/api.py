@@ -76,7 +76,7 @@ def ticker_page(ticker: str):
     summary = (f"Today's options volume is {m:.1f}x the 30-day average of {avg:,.0f}." if m
                else "Not enough history yet to compare with a 30-day average.")
     cs = t["call_share"] * 100
-    read = f"{cs:.0f}% of premium is in calls and {100-cs:.0f}% in puts: {t['bias'].lower()} lean."
+    read = f"{cs:.0f}% of volume is in calls and {100-cs:.0f}% in puts: {t['bias'].lower()} lean."
     top = [_play(r, s) for r, s in engine.score_all(c, CFG) if r["underlying"] == t["ticker"]][:5]
     return {"last_updated": _last_updated(c), **t, "summary": summary, "read": read, "top_contracts": top}
 

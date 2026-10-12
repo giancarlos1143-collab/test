@@ -53,7 +53,7 @@ scoring:
 
 # ---- Sentiment ----
 sentiment:
-  bullish_call_share: 0.55    # call share of premium at/above this = Bullish
+  bullish_call_share: 0.55    # call share of VOLUME at/above this = Bullish
   bearish_call_share: 0.45    # at/below this = Bearish, in between = Neutral
   intensity_moderate: 1.2     # volume multiple at/above = Moderate
   intensity_high: 2.0         # at/above = High

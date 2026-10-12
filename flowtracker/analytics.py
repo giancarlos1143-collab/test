@@ -47,8 +47,8 @@ def ticker_stats(conn, cfg):
         avg = avgs.get(t["ticker"])
         t["avg_volume_30d"] = avg
         t["volume_multiple"] = (t["volume"] / avg) if avg else None
-        tot = t["call_premium"] + t["put_premium"]
-        t["call_share"] = (t["call_premium"] / tot) if tot else 0.5
+        tot = t["call_volume"] + t["put_volume"]
+        t["call_share"] = (t["call_volume"] / tot) if tot else 0.5   # share of VOLUME
         t["bias"] = _label(t["call_share"], sc["ticker_bearish_call_share"], sc["ticker_bullish_call_share"])
         m = t["volume_multiple"]
         t["intensity"] = None if m is None else (
@@ -62,7 +62,9 @@ def market_sentiment(conn, cfg):
     vals = list(stats.values())
     call_p = sum(t["call_premium"] for t in vals)
     put_p = sum(t["put_premium"] for t in vals)
-    share = call_p / (call_p + put_p) if (call_p + put_p) else 0.5
+    call_v = sum(t["call_volume"] for t in vals)
+    put_v = sum(t["put_volume"] for t in vals)
+    share = call_v / (call_v + put_v) if (call_v + put_v) else 0.5   # share of VOLUME
     ranked = sorted(vals, key=lambda t: (t["volume_multiple"] is None, -(t["volume_multiple"] or 0)))
     return dict(
         total_volume=sum(t["volume"] for t in vals),

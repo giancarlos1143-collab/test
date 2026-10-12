@@ -1,40 +1,47 @@
 # Options Flow Tracker
 
-Personal options-flow scanner. Built in stages (see the build spec).
+A personal options-flow scanner for your iPhone. It scans unusual options activity, scores each contract
+0-100, and shows market sentiment, a watchlist, and a paper-trading results log.
 
-## Stage 1: data pipeline
-    pip install -r requirements.txt
-    cp .env.example .env          # then edit .env
-    python3 -m flowtracker.fetch  # fetch + save + print sample
+## Quick start (Mac)
+    pip3 install -r requirements.txt
+    cp .env.example .env            # then open .env and set APP_PASSWORD
+    python3 -m flowtracker.simulate # OPTIONAL: fake 45 days of history so you can try everything
+    python3 -m flowtracker.fetch    # scan now (uses fake data until you add a Massive key)
+    python3 -m flowtracker.serve    # app + scheduled scans; prints the address for your iPhone
+Then see `docs/HOSTING.md` for adding it to your iPhone home screen and using it away from home.
 
-`DATA_PROVIDER=mock` uses fake data (no key). `DATA_PROVIDER=massive` uses the real API
-and needs `MASSIVE_API_KEY` in `.env`. Edit `config.yaml` to change tickers/rate limits.
+## Switching to real data
+1. Get a Massive (formerly Polygon.io) API key. Check their pricing page for the cheapest plan that includes
+   **option chain snapshots** with volume, open interest and implied volatility.
+2. In `.env`: `DATA_PROVIDER=massive` and `MASSIVE_API_KEY=your_key`.
+3. If you used the simulator, remove the fake history first: `python3 -m flowtracker.simulate --clear`.
+4. `python3 -m flowtracker.fetch NVDA` as a small test, then the full scan.
+The Massive code was written from their documentation and could not be tested against the live service, so
+expect to check the first real run (field names, rate limits). Volume multiple and IV percentile show
+"building history" until 30 days of scans are stored.
 
-## Stage 2: scoring
-    python3 -m pytest -q tests     # includes the DRAM worked example
-    python3 -m flowtracker.top     # today's top 10 scored contracts (add a number for more)
-All thresholds are in the `scoring:` section of `config.yaml`.
+## Everyday commands
+| Command | What it does |
+|---|---|
+| `python3 -m flowtracker.serve` | Runs the app and the scheduled scans |
+| `python3 -m flowtracker.fetch [TICKERS] [--force]` | Scan now |
+| `python3 -m flowtracker.top [N]` | Print today's top scored contracts |
+| `python3 -m flowtracker.results [--backfill]` | Update the paper-trading log and print hit rates |
+| `python3 -m flowtracker.simulate [--clear]` | Add / remove fake history |
+| `python3 -m pytest -q tests` | Run the tests (includes the DRAM worked example) |
 
-### Mock history simulator
-    python3 -m flowtracker.simulate          # backfill 45 fake trading days
-    python3 -m flowtracker.fetch             # then add today's scan
-    python3 -m flowtracker.simulate --clear  # remove the fake history (before using real data)
+## Where things live
+- `config.yaml`: scan universe, every scoring threshold, tier names, sentiment cutoffs, schedule.
+- `data/flow.db`: SQLite; every scan is kept forever. `.env`: secrets (never committed).
+- `flowtracker/`: Python backend (providers, scoring, API). `web/`: the React phone app.
+- Every number in the app traces to a stored row: the Detail screen shows its scan and snapshot number.
 
-## Stage 3: backend API
-    uvicorn flowtracker.api:app --port 8000     # interactive docs at http://127.0.0.1:8000/docs
-Endpoints: `/api/top-plays`, `/api/contracts/{id}`, `/api/sentiment`, `/api/tickers/{T}`,
-`/api/watchlist` (GET/POST, DELETE `/api/watchlist/{T}`). Watchlist tickers are saved in the
-database and included in the next `fetch`.
+## Development
+    uvicorn flowtracker.api:app --port 8000 --reload     # API (docs at /docs)
+    cd web && npm install && npm run dev                 # app at http://localhost:5173
+After changing the app, `cd web && npm run build` (serve uses the built copy).
 
-## Stage 4: the app (React + Vite PWA)
-    cd web && npm install && npm run dev      # http://localhost:5173 (needs the API running)
-Run the API in a second terminal: `uvicorn flowtracker.api:app --port 8000`.
-
-## Stages 5-6: Sentiment, Ticker, Watchlist screens
-Same run steps as Stage 4. Adding a ticker on the Watchlist tab fetches its options data immediately
-and includes it in every future scan.
-
-## Stage 8: results log (paper trading)
-    python3 -m flowtracker.results              # log today's 80+ plays, fill due outcomes, print hit rates
-    python3 -m flowtracker.results --backfill   # also replay every stored past day
-`fetch` runs this automatically after each scan. The **Results** tab shows hit rates after 1/3/5 trading days.
+## Not in v1
+No bought-at-ask vs sold-at-bid (the `side` field is a placeholder), no Hot News or Profile tabs,
+market holidays aren't modelled in the scheduler or the 1/3/5 trading-day results.

@@ -1,11 +1,13 @@
 """Backend API.   uvicorn flowtracker.api:app --reload --port 8000     (docs at /docs)"""
 from datetime import datetime, timezone
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import analytics, db, engine, results
-from .config import load_config, scan_universe
+from . import analytics, auth, db, engine, results
+from .config import ROOT, load_config, scan_universe
 from .explain import explain
 
 app = FastAPI(title="Options Flow Tracker")
@@ -27,6 +29,33 @@ def _play(r, s):
         price=r["price"], dte=r["dte"], expiration=r["expiration"], volume=r["volume"],
         open_interest=r["open_interest"], premium=round(s.dollar_flow, 2), vol_oi=round(s.ratio, 2), iv=r["iv"],
         score=round(s.total, 1), tier=s.tier, scored_at=r["scanned_at"])
+
+
+OPEN_PATHS = {"/api/health", "/api/login", "/api/session"}
+
+
+@app.middleware("http")
+async def require_login(request: Request, call_next):
+    if request.url.path.startswith("/api/") and request.url.path not in OPEN_PATHS \
+            and not auth.valid_token(request.cookies.get(auth.COOKIE)):
+        return JSONResponse({"detail": "Login required"}, status_code=401)
+    return await call_next(request)
+
+
+class LoginIn(BaseModel):
+    password: str
+
+
+@app.post("/api/login")
+def login(body: LoginIn, request: Request, response: Response):
+    auth.login(request, response, body.password)
+    return {"ok": True}
+
+
+@app.get("/api/session")
+def session(request: Request):
+    return {"password_required": bool(auth.password()),
+            "logged_in": auth.valid_token(request.cookies.get(auth.COOKIE))}
 
 
 @app.get("/api/health")
@@ -139,3 +168,9 @@ def remove_watch(ticker: str):
     c.execute("DELETE FROM watchlist WHERE ticker=?", (ticker.upper(),))
     c.commit()
     return {"removed": ticker.upper()}
+
+
+# Serve the built phone app (web/dist) from the same server, so one address does everything.
+_dist = ROOT / "web" / "dist"
+if _dist.exists():
+    app.mount("/", StaticFiles(directory=_dist, html=True), name="web")

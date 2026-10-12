@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import TopPlays from './TopPlays.jsx'
 import Detail from './Detail.jsx'
+import Login from './Login.jsx'
 import Sentiment from './Sentiment.jsx'
 import Results from './Results.jsx'
 import Ticker from './Ticker.jsx'
@@ -19,6 +20,13 @@ const TABS = [
 ]
 
 export default function App() {
+  // null = checking, false = need to log in, true = ok
+  const [ok, setOk] = useState(null)
+  useEffect(() => {
+    fetch('/api/session').then((r) => r.json()).then((s) => setOk(!s.password_required || s.logged_in), () => setOk(true))
+  }, [])
+  if (ok === null) return null
+  if (!ok) return <Login onDone={() => setOk(true)} />
   return (
     <>
       <Routes>

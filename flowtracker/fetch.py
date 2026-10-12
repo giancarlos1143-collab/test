@@ -14,6 +14,11 @@ from .providers import get_provider
 def main(argv: list[str]) -> None:
     force = "--force" in argv
     tickers = [a.upper() for a in argv if not a.startswith("--")] or None
+    run_scan(tickers, force)
+
+
+def run_scan(tickers=None, force=False) -> None:
+    """One full scan: fetch -> save -> results log. Used by the command line and the scheduler."""
     cfg = load_config()
     conn = db.connect(cfg)
     tickers = tickers or scan_universe(cfg, db.watchlist(conn))

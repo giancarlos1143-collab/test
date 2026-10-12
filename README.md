@@ -25,3 +25,7 @@ All thresholds are in the `scoring:` section of `config.yaml`.
 Endpoints: `/api/top-plays`, `/api/contracts/{id}`, `/api/sentiment`, `/api/tickers/{T}`,
 `/api/watchlist` (GET/POST, DELETE `/api/watchlist/{T}`). Watchlist tickers are saved in the
 database and included in the next `fetch`.
+
+## Stage 4: the app (React + Vite PWA)
+    cd web && npm install && npm run dev      # http://localhost:5173 (needs the API running)
+Run the API in a second terminal: `uvicorn flowtracker.api:app --port 8000`.

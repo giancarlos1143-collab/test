@@ -1,7 +1,7 @@
 """Backend API.   uvicorn flowtracker.api:app --reload --port 8000     (docs at /docs)"""
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from . import analytics, db, engine
@@ -100,8 +100,20 @@ def get_watchlist():
     return {"last_updated": _last_updated(c), "watchlist": rows}
 
 
+def _fetch_one(ticker: str):
+    """Pull a fresh chain for one ticker (runs in the background after it's added to the watchlist)."""
+    from .providers import get_provider
+    try:
+        c = conn()
+        prov = get_provider(CFG)
+        rows = prov.fetch_chain(ticker, CFG["provider"]["max_dte"])
+        db.save_snapshots(c, db.new_scan(c, prov.name), rows)
+    except Exception as e:  # never crash the server over a data hiccup
+        print(f"background fetch for {ticker} failed: {e}")
+
+
 @app.post("/api/watchlist", status_code=201)
-def add_watch(body: TickerIn):
+def add_watch(body: TickerIn, bg: BackgroundTasks):
     tk = body.ticker.upper().strip()
     if not tk.isalnum() or len(tk) > 6:
         raise HTTPException(422, "Ticker must be 1-6 letters/digits")
@@ -109,6 +121,8 @@ def add_watch(body: TickerIn):
     c.execute("INSERT OR IGNORE INTO watchlist VALUES (?,?)",
               (tk, datetime.now(timezone.utc).isoformat(timespec="seconds")))
     c.commit()
+    if tk not in analytics.ticker_stats(c, CFG):
+        bg.add_task(_fetch_one, tk)
     return {"ticker": tk, "scan_universe_size": len(scan_universe(CFG, db.watchlist(c)))}
 
 

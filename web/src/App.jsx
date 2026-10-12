@@ -2,8 +2,9 @@ import React from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import TopPlays from './TopPlays.jsx'
 import Detail from './Detail.jsx'
-
-const Soon = ({ name }) => <div className="screen"><h1>{name}</h1><div className="note">Coming in the next stage.</div></div>
+import Sentiment from './Sentiment.jsx'
+import Ticker from './Ticker.jsx'
+import Watchlist from './Watchlist.jsx'
 
 const I = {
   plays: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
@@ -23,8 +24,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<TopPlays />} />
         <Route path="/play/:id" element={<Detail />} />
-        <Route path="/sentiment" element={<Soon name="Options Momentum" />} />
-        <Route path="/watchlist" element={<Soon name="Watchlist" />} />
+        <Route path="/sentiment" element={<Sentiment />} />
+        <Route path="/ticker/:symbol" element={<Ticker />} />
+        <Route path="/watchlist" element={<Watchlist />} />
         <Route path="*" element={<TopPlays />} />
       </Routes>
       <nav className="tabbar">

@@ -17,10 +17,17 @@ class MockProvider:
         # Expiry dates always come from the real today, so a contract keeps the same ID across days.
         self.as_of = as_of or date.today()
 
+    @staticmethod
+    def _day_price(ticker: str, day: date) -> float:
+        base = BASE_PRICES.get(ticker, 100)
+        return base * (1 + random.Random(f"px-{ticker}-{day}").uniform(-0.03, 0.03))
+
     def fetch_chain(self, ticker: str, max_dte: int) -> list[ContractSnapshot]:
         rnd = random.Random(f"{ticker}-{self.as_of}")
-        spot = BASE_PRICES.get(ticker, 100)
-        change = round(rnd.uniform(-3, 3), 2)
+        spot = BASE_PRICES.get(ticker, 100)          # strikes are built from this fixed number
+        px = self._day_price(ticker, self.as_of)     # the stock's price that day (random walk-ish)
+        prev = self._day_price(ticker, self.as_of - timedelta(days=1 if self.as_of.weekday() else 3))
+        change = round((px / prev - 1) * 100, 2)
         out = []
         for dte in (0, 2, 5, 9, 16, 30):
             if dte > max_dte:
@@ -32,12 +39,12 @@ class MockProvider:
                     dist = abs(step)
                     oi = int(rnd.uniform(300, 8000) / (1 + dist * 0.3) * rnd.choice([0.1, 0.3, 1, 1, 2]))
                     vol = int(oi * rnd.choices([0.05, 0.15, 0.3, 0.6, 1.5, 4.5], weights=[30, 30, 20, 12, 6, 2])[0] * rnd.uniform(0.5, 1.5))
-                    price = round(max(0.05, spot * 0.02 / (1 + dist) * (1 + dte / 30)), 2)
+                    price = round(max(0.05, spot * 0.02 / (1 + dist) * (1 + dte / 30) * rnd.uniform(0.8, 1.25)), 2)
                     out.append(ContractSnapshot(
                         underlying=ticker,
                         contract=f"O:{ticker}{exp.replace('-', '')[2:]}{kind[0].upper()}{int(strike*1000):08d}",
                         kind=kind, strike=strike, expiration=exp, price=price,
                         volume=vol, open_interest=oi, iv=round(rnd.uniform(0.25, 0.9), 3),
-                        underlying_price=spot, underlying_change_pct=change,
+                        underlying_price=round(px, 2), underlying_change_pct=change,
                     ))
         return out

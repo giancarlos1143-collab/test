@@ -56,13 +56,13 @@ def _iv_history(conn, scan_date, need_days):
 _cache = {"key": None, "val": None}
 
 
-def score_all(conn, cfg) -> list[tuple[dict, Score]]:
-    """Scores newest-per-contract snapshots of the latest scan date. Cached until a new scan."""
-    key = conn.execute("SELECT MAX(id) m FROM scans").fetchone()["m"]
-    if _cache["key"] == (key, id(cfg)):
+def score_all(conn, cfg, scan_date=None) -> list[tuple[dict, Score]]:
+    """Scores newest-per-contract snapshots of a scan date (default: latest). Cached until a new scan."""
+    key = (conn.execute("SELECT MAX(id) m FROM scans").fetchone()["m"], scan_date)
+    if _cache.get("key") == (key, id(cfg)):
         return _cache["val"]
     sc = cfg["scoring"]
-    scan_date = latest_scan_date(conn)
+    scan_date = scan_date or latest_scan_date(conn)
     if not scan_date:
         return []
     today = date.fromisoformat(scan_date)

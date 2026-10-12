@@ -26,3 +26,13 @@ export function tierClass(tier) {
 export function tierColor(tier) {
   return { ROBBERY: 'var(--red)', 'STRONG STICKUP': 'var(--orange)', CASING: '#C7803A' }[tier] || 'var(--muted)'
 }
+export function compact(n) {
+  if (n == null) return '—'
+  const a = Math.abs(n)
+  if (a >= 1e9) return `${(n / 1e9).toFixed(1)}B`
+  if (a >= 1e6) return `${(n / 1e6).toFixed(1)}M`
+  if (a >= 1e3) return `${(n / 1e3).toFixed(1)}K`
+  return `${Math.round(n)}`
+}
+export const chg = (n) => (n == null ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`)
+export const chgClass = (n) => (n == null ? '' : n >= 0 ? 'up' : 'down')

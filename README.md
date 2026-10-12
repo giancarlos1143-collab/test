@@ -29,3 +29,7 @@ database and included in the next `fetch`.
 ## Stage 4: the app (React + Vite PWA)
     cd web && npm install && npm run dev      # http://localhost:5173 (needs the API running)
 Run the API in a second terminal: `uvicorn flowtracker.api:app --port 8000`.
+
+## Stages 5-6: Sentiment, Ticker, Watchlist screens
+Same run steps as Stage 4. Adding a ticker on the Watchlist tab fetches its options data immediately
+and includes it in every future scan.

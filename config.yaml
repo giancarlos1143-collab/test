@@ -1,0 +1,31 @@
+# Edit this file to change what gets scanned. Watchlist tickers are added automatically
+# (the watchlist itself arrives in Stage 6).
+universe:
+  - SPY
+  - QQQ
+  - IWM
+  - PLTR
+  - NVDA
+  - TSLA
+  - AAPL
+  - AMD
+  - META
+  - GME
+  - IREN
+  - WULF
+  - IBIT
+  - CRWV
+  - ORCL
+  - XLF
+
+watchlist: []
+
+provider:
+  # Free tiers are slow (a few calls/minute). Seconds to wait between API calls:
+  min_seconds_between_calls: 13
+  # Only keep contracts expiring within this many days (keeps data small)
+  max_dte: 45
+  # Reuse a stored snapshot younger than this many minutes instead of re-fetching
+  cache_minutes: 60
+
+database: data/flow.db

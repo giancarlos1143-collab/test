@@ -25,8 +25,8 @@ class MockProvider:
                 for step in range(-4, 5):
                     strike = round(spot * (1 + step * 0.02), 0)
                     dist = abs(step)
-                    oi = int(rnd.uniform(300, 8000) / (1 + dist * 0.3))
-                    vol = int(oi * rnd.choice([0.1, 0.3, 0.6, 1.0, 2.5, 4.5]) * rnd.uniform(0.5, 1.5))
+                    oi = int(rnd.uniform(300, 8000) / (1 + dist * 0.3) * rnd.choice([0.1, 0.3, 1, 1, 2]))
+                    vol = int(oi * rnd.choices([0.05, 0.15, 0.3, 0.6, 1.5, 4.5], weights=[30, 30, 20, 12, 6, 2])[0] * rnd.uniform(0.5, 1.5))
                     price = round(max(0.05, spot * 0.02 / (1 + dist) * (1 + dte / 30)), 2)
                     out.append(ContractSnapshot(
                         underlying=ticker,

@@ -29,3 +29,24 @@ provider:
   cache_minutes: 60
 
 database: data/flow.db
+
+# ---- Scoring (all tunable) ----
+scoring:
+  min_volume: 500
+  min_premium: 50000
+  vol_oi:        {zero_at: 1.0, full_at: 4.0}        # linear
+  premium:       {zero_at: 50000, full_at: 1000000}  # log curve
+  vol_multiple:  {zero_at: 1.0, full_at: 5.0}        # linear
+  history_days: 30            # days of history needed before using our own 30-day average
+  neutral_vol_multiple: 12    # score while history is still building
+  neutral_iv_percentile: 50   # IV percentile assumed while history is still building
+  expiry_points:              # (max DTE, points) checked in order
+    - {max_dte: 2,  points: 15}
+    - {max_dte: 7,  points: 12}
+    - {max_dte: 30, points: 7}
+    - {max_dte: 9999, points: 3}
+  iv_points_divisor: 10       # IV percentile / 10 = up to 10 points
+  tiers:                      # checked top to bottom
+    - {min: 95, label: ROBBERY,         color: red}
+    - {min: 80, label: STRONG STICKUP,  color: orange}
+    - {min: 60, label: CASING,          color: outline}

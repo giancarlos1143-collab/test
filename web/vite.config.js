@@ -3,11 +3,14 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const api = { '/api': 'http://127.0.0.1:8000' }
+// VITE_DEMO=1 builds the self-contained preview (no server, no service worker)
+const demo = process.env.VITE_DEMO === '1'
 
 export default defineConfig({
+  build: demo ? { outDir: 'dist-preview', rollupOptions: { output: { inlineDynamicImports: true } } } : {},
   plugins: [
     react(),
-    VitePWA({
+    ...(demo ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
@@ -30,7 +33,7 @@ export default defineConfig({
           { urlPattern: /\/api\//, handler: 'NetworkFirst', options: { cacheName: 'api', networkTimeoutSeconds: 5 } },
         ],
       },
-    }),
+    })]),
   ],
   server: { proxy: api },
   preview: { proxy: api },

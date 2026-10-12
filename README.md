@@ -45,3 +45,6 @@ After changing the app, `cd web && npm run build` (serve uses the built copy).
 ## Not in v1
 No bought-at-ask vs sold-at-bid (the `side` field is a placeholder), no Hot News or Profile tabs,
 market holidays aren't modelled in the scheduler or the 1/3/5 trading-day results.
+
+## Shareable preview page
+    PYTHONPATH=. python3 tools/make_preview.py     # writes preview/index.html (sample-data snapshot, no server needed)

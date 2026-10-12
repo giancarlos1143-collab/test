@@ -97,3 +97,6 @@ a.card:active { background: #232326; }
 .chip .v { font-size: 15px; font-weight: 700; margin-top: 2px; color: var(--muted); }
 .chip.hit { border-color: rgba(48,209,88,.5); } .chip.hit .v { color: var(--green); }
 .chip.miss { border-color: rgba(255,69,58,.5); } .chip.miss .v { color: var(--red); }
+
+.demo-banner { text-align: center; font-size: 12px; color: var(--muted); background: var(--card);
+  border-bottom: 1px solid var(--border); padding: 7px 16px; }

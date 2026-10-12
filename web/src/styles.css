@@ -89,3 +89,11 @@ a.card:active { background: #232326; }
 .rm { background: none; border: 0; color: var(--muted); font-size: 22px; padding: 4px 8px; cursor: pointer; }
 .top-line { gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
 .top-line b { color: var(--text); }
+
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.chip { border: 1px solid var(--border); border-radius: 12px; padding: 8px 6px; text-align: center; }
+.chip .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.chip .v { font-size: 15px; font-weight: 700; margin-top: 2px; color: var(--muted); }
+.chip.hit { border-color: rgba(48,209,88,.5); } .chip.hit .v { color: var(--green); }
+.chip.miss { border-color: rgba(255,69,58,.5); } .chip.miss .v { color: var(--red); }

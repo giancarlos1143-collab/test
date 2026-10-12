@@ -1,6 +1,6 @@
 """Backfill fake history so the 30-day features can be tried with mock data.
 
-    python3 -m flowtracker.simulate           # add ~32 past trading days of fake scans
+    python3 -m flowtracker.simulate           # add ~45 past trading days of fake scans
     python3 -m flowtracker.simulate --clear   # remove them again
 Run `python3 -m flowtracker.fetch` afterwards so today's scan is the newest one.
 """
@@ -12,7 +12,7 @@ from .config import load_config, scan_universe
 from .providers.mock import MockProvider
 
 SIM_TAG = "mock-sim"
-DAYS = 32
+DAYS = 45
 
 
 def main(argv):

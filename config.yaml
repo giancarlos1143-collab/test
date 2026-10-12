@@ -59,3 +59,9 @@ sentiment:
   intensity_high: 2.0         # at/above = High
   ticker_bullish_call_share: 0.55
   ticker_bearish_call_share: 0.45
+
+# ---- Results log (paper trading) ----
+results:
+  min_score: 80              # plays scoring at/above this are logged
+  horizons: [1, 3, 5]        # trading days after the flag
+  max_lookahead_days: 3      # if no scan on the target day, accept the next scan within this many days

@@ -27,6 +27,25 @@ CREATE TABLE IF NOT EXISTS snapshots (
     side TEXT                          -- placeholder, empty in v1
 );
 CREATE TABLE IF NOT EXISTS watchlist (ticker TEXT PRIMARY KEY, added_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS flagged_plays (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contract TEXT NOT NULL, underlying TEXT NOT NULL, kind TEXT NOT NULL,
+    strike REAL, expiration TEXT,
+    flag_date TEXT NOT NULL, flagged_at TEXT NOT NULL,
+    scan_id INTEGER, snapshot_id INTEGER,
+    score REAL NOT NULL, tier TEXT,
+    stock_price REAL, contract_price REAL,
+    UNIQUE (contract, flag_date)
+);
+CREATE TABLE IF NOT EXISTS flag_outcomes (
+    flag_id INTEGER NOT NULL REFERENCES flagged_plays(id),
+    horizon INTEGER NOT NULL,            -- trading days after the flag: 1, 3 or 5
+    target_date TEXT NOT NULL,           -- the date we were aiming for
+    actual_date TEXT NOT NULL,           -- the scan date actually used
+    snapshot_id INTEGER,                 -- contract snapshot used (NULL if contract not in that scan)
+    stock_price REAL, contract_price REAL,
+    PRIMARY KEY (flag_id, horizon)
+);
 CREATE INDEX IF NOT EXISTS ix_snap_scan ON snapshots(scan_id);
 CREATE INDEX IF NOT EXISTS ix_snap_contract ON snapshots(contract, scan_id);
 """

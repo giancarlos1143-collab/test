@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel
 
-from . import analytics, db, engine
+from . import analytics, db, engine, results
 from .config import load_config, scan_universe
 from .explain import explain
 
@@ -79,6 +79,13 @@ def ticker_page(ticker: str):
     read = f"{cs:.0f}% of volume is in calls and {100-cs:.0f}% in puts: {t['bias'].lower()} lean."
     top = [_play(r, s) for r, s in engine.score_all(c, CFG) if r["underlying"] == t["ticker"]][:5]
     return {"last_updated": _last_updated(c), **t, "summary": summary, "read": read, "top_contracts": top}
+
+
+@app.get("/api/results")
+def results_log(limit: int = 100):
+    c = conn()
+    return {"last_updated": _last_updated(c), "min_score": CFG["results"]["min_score"],
+            **results.summary(c, CFG), "plays": results.flagged_list(c, CFG, limit)}
 
 
 class TickerIn(BaseModel):

@@ -35,7 +35,13 @@ def main(argv: list[str]) -> None:
         db.save_snapshots(conn, scan_id, rows)
         total += len(rows)
         print(f"  {t:5} saved {len(rows):5} contracts")
-    print(f"Done. {total} contracts stored in {cfg['database']}\n")
+    print(f"Done. {total} contracts stored in {cfg['database']}")
+    try:  # log 80+ plays and fill in any due 1/3/5-day outcomes
+        from . import results
+        new, outs = results.run(conn, cfg)
+        print(f"Results log: {new} new flagged plays, {outs} outcomes filled\n")
+    except Exception as e:
+        print(f"Results log skipped: {e}\n")
 
     print("Sample: 8 highest-volume contracts in this scan")
     print(f"{'contract':26}{'type':6}{'strike':>8}{'exp':>12}{'price':>8}{'vol':>8}{'OI':>8}{'IV':>7}")

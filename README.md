@@ -16,7 +16,7 @@ and needs `MASSIVE_API_KEY` in `.env`. Edit `config.yaml` to change tickers/rate
 All thresholds are in the `scoring:` section of `config.yaml`.
 
 ### Mock history simulator
-    python3 -m flowtracker.simulate          # backfill 32 fake trading days
+    python3 -m flowtracker.simulate          # backfill 45 fake trading days
     python3 -m flowtracker.fetch             # then add today's scan
     python3 -m flowtracker.simulate --clear  # remove the fake history (before using real data)
 
@@ -33,3 +33,8 @@ Run the API in a second terminal: `uvicorn flowtracker.api:app --port 8000`.
 ## Stages 5-6: Sentiment, Ticker, Watchlist screens
 Same run steps as Stage 4. Adding a ticker on the Watchlist tab fetches its options data immediately
 and includes it in every future scan.
+
+## Stage 8: results log (paper trading)
+    python3 -m flowtracker.results              # log today's 80+ plays, fill due outcomes, print hit rates
+    python3 -m flowtracker.results --backfill   # also replay every stored past day
+`fetch` runs this automatically after each scan. The **Results** tab shows hit rates after 1/3/5 trading days.

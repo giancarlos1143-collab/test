@@ -1,4 +1,5 @@
 """Scores the latest stored snapshots, using stored history for averages and IV percentile."""
+from bisect import bisect_right
 from datetime import date
 
 from . import db
@@ -19,46 +20,67 @@ def _today_rows(conn, scan_date):
              WHERE s2.scan_date = ? GROUP BY n2.contract)""", (scan_date, scan_date)).fetchall()
 
 
-def _avg_volume(conn, contract, scan_date, need_days):
-    """30-day average volume for a contract from prior days. None until enough days exist."""
+def _avg_volumes(conn, scan_date, need_days):
+    """{contract: 30-day average volume} from the prior days, only where enough days exist."""
+    days = [r["d"] for r in conn.execute(
+        "SELECT DISTINCT scan_date d FROM scans WHERE scan_date < ? ORDER BY d DESC LIMIT 30",
+        (scan_date,))]
+    if len(days) < need_days:
+        return {}
+    q = ",".join("?" * len(days))
     rows = conn.execute(
-        """SELECT s.scan_date, MAX(n.volume) v FROM snapshots n JOIN scans s ON s.id=n.scan_id
-           WHERE n.contract=? AND s.scan_date < ? GROUP BY s.scan_date
-           ORDER BY s.scan_date DESC LIMIT 30""", (contract, scan_date)).fetchall()
-    return (sum(r["v"] for r in rows) / len(rows)) if len(rows) >= need_days else None
+        f"""SELECT contract, AVG(v) a, COUNT(*) c FROM (
+              SELECT n.contract, s.scan_date, MAX(n.volume) v FROM snapshots n
+              JOIN scans s ON s.id=n.scan_id WHERE s.scan_date IN ({q})
+              GROUP BY n.contract, s.scan_date) GROUP BY contract""", days).fetchall()
+    # a contract with fewer than need_days days of its own data has no reliable average yet
+    return {r["contract"]: r["a"] for r in rows if r["c"] >= need_days}
 
 
-def _iv_percentile(conn, underlying, iv, scan_date, need_days):
-    """Where today's IV sits among this underlying's past IVs (0-100). None until enough days."""
-    rows = conn.execute(
-        """SELECT n.iv FROM snapshots n JOIN scans s ON s.id=n.scan_id
-           WHERE n.underlying=? AND s.scan_date < ? AND n.iv IS NOT NULL
-           AND s.scan_date IN (SELECT DISTINCT s3.scan_date FROM scans s3 WHERE s3.scan_date < ?
-                               ORDER BY s3.scan_date DESC LIMIT 252)""",
-        (underlying, scan_date, scan_date)).fetchall()
-    days = conn.execute("SELECT COUNT(DISTINCT scan_date) c FROM scans WHERE scan_date < ?",
-                        (scan_date,)).fetchone()["c"]
-    if days < need_days or not rows or iv is None:
-        return None
-    return 100.0 * sum(1 for r in rows if r["iv"] <= iv) / len(rows)
+def _iv_history(conn, scan_date, need_days):
+    """{underlying: sorted list of past IVs} over up to 252 prior days; {} if too little history."""
+    days = [r["d"] for r in conn.execute(
+        "SELECT DISTINCT scan_date d FROM scans WHERE scan_date < ? ORDER BY d DESC LIMIT 252",
+        (scan_date,))]
+    if len(days) < need_days:
+        return {}
+    q = ",".join("?" * len(days))
+    out = {}
+    for r in conn.execute(
+            f"""SELECT n.underlying u, n.iv FROM snapshots n JOIN scans s ON s.id=n.scan_id
+                WHERE s.scan_date IN ({q}) AND n.iv IS NOT NULL""", days):
+        out.setdefault(r["u"], []).append(r["iv"])
+    return {u: sorted(v) for u, v in out.items()}
+
+
+_cache = {"key": None, "val": None}
 
 
 def score_all(conn, cfg) -> list[tuple[dict, Score]]:
+    """Scores newest-per-contract snapshots of the latest scan date. Cached until a new scan."""
+    key = conn.execute("SELECT MAX(id) m FROM scans").fetchone()["m"]
+    if _cache["key"] == (key, id(cfg)):
+        return _cache["val"]
     sc = cfg["scoring"]
     scan_date = latest_scan_date(conn)
     if not scan_date:
         return []
     today = date.fromisoformat(scan_date)
+    avgs = _avg_volumes(conn, scan_date, sc["history_days"])
+    ivs = _iv_history(conn, scan_date, sc["history_days"])
     out = []
     for r in _today_rows(conn, scan_date):
         price = r["price"] or 0
         if not passes_filters(r["volume"], price, sc):
             continue
-        avg = _avg_volume(conn, r["contract"], scan_date, sc["history_days"]) or r["avg_volume_30d"]
+        avg = avgs.get(r["contract"]) or r["avg_volume_30d"]
         mult = (r["volume"] / avg) if avg else None
-        ivp = _iv_percentile(conn, r["underlying"], r["iv"], scan_date, sc["history_days"])
+        hist = ivs.get(r["underlying"])
+        ivp = (100.0 * bisect_right(hist, r["iv"]) / len(hist)) if hist and r["iv"] is not None else None
         dte = (date.fromisoformat(r["expiration"]) - today).days
         s = score_contract(ContractInput(r["volume"], r["open_interest"], price, dte, ivp, mult), sc)
-        out.append(({**dict(r), "dte": dte, "iv_percentile": ivp, "volume_multiple": mult}, s))
+        out.append(({**dict(r), "dte": dte, "iv_percentile": ivp, "volume_multiple": mult,
+                     "avg_volume": avg}, s))
     out.sort(key=lambda x: x[1].total, reverse=True)
+    _cache.update(key=(key, id(cfg)), val=out)
     return out

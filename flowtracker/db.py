@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
     avg_volume_30d REAL,
     side TEXT                          -- placeholder, empty in v1
 );
+CREATE TABLE IF NOT EXISTS watchlist (ticker TEXT PRIMARY KEY, added_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS ix_snap_scan ON snapshots(scan_id);
 CREATE INDEX IF NOT EXISTS ix_snap_contract ON snapshots(contract, scan_id);
 """
@@ -71,3 +72,7 @@ def recent_ticker_scan(conn, ticker: str, max_age_minutes: int):
         return None
     age = datetime.now(timezone.utc) - datetime.fromisoformat(row["scanned_at"])
     return row["id"] if age.total_seconds() < max_age_minutes * 60 else None
+
+
+def watchlist(conn) -> list[str]:
+    return [r["ticker"] for r in conn.execute("SELECT ticker FROM watchlist ORDER BY added_at, ticker")]

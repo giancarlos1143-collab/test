@@ -15,9 +15,9 @@ def main(argv: list[str]) -> None:
     force = "--force" in argv
     tickers = [a.upper() for a in argv if not a.startswith("--")] or None
     cfg = load_config()
-    tickers = tickers or scan_universe(cfg)
-    provider = get_provider(cfg)
     conn = db.connect(cfg)
+    tickers = tickers or scan_universe(cfg, db.watchlist(conn))
+    provider = get_provider(cfg)
     scan_id = db.new_scan(conn, provider.name)
     print(f"Scan #{scan_id} using provider '{provider.name}' for {len(tickers)} tickers")
 

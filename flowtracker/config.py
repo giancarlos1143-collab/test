@@ -13,9 +13,10 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
-def scan_universe(cfg: dict) -> list[str]:
+def scan_universe(cfg: dict, extra: list[str] | None = None) -> list[str]:
+    """config universe + config watchlist + watchlist stored in the database (`extra`)."""
     seen: list[str] = []
-    for t in list(cfg.get("universe") or []) + list(cfg.get("watchlist") or []):
+    for t in list(cfg.get("universe") or []) + list(cfg.get("watchlist") or []) + list(extra or []):
         t = t.upper().strip()
         if t and t not in seen:
             seen.append(t)

@@ -19,3 +19,9 @@ All thresholds are in the `scoring:` section of `config.yaml`.
     python3 -m flowtracker.simulate          # backfill 32 fake trading days
     python3 -m flowtracker.fetch             # then add today's scan
     python3 -m flowtracker.simulate --clear  # remove the fake history (before using real data)
+
+## Stage 3: backend API
+    uvicorn flowtracker.api:app --port 8000     # interactive docs at http://127.0.0.1:8000/docs
+Endpoints: `/api/top-plays`, `/api/contracts/{id}`, `/api/sentiment`, `/api/tickers/{T}`,
+`/api/watchlist` (GET/POST, DELETE `/api/watchlist/{T}`). Watchlist tickers are saved in the
+database and included in the next `fetch`.

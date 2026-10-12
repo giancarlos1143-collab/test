@@ -12,8 +12,13 @@ BASE_PRICES = {"SPY": 560, "QQQ": 480, "IWM": 220, "PLTR": 75, "NVDA": 135, "TSL
 class MockProvider:
     name = "mock"
 
+    def __init__(self, as_of: date | None = None):
+        # as_of only changes the random volumes/IV (used by the history simulator).
+        # Expiry dates always come from the real today, so a contract keeps the same ID across days.
+        self.as_of = as_of or date.today()
+
     def fetch_chain(self, ticker: str, max_dte: int) -> list[ContractSnapshot]:
-        rnd = random.Random(f"{ticker}-{date.today()}")
+        rnd = random.Random(f"{ticker}-{self.as_of}")
         spot = BASE_PRICES.get(ticker, 100)
         change = round(rnd.uniform(-3, 3), 2)
         out = []

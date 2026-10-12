@@ -14,3 +14,8 @@ and needs `MASSIVE_API_KEY` in `.env`. Edit `config.yaml` to change tickers/rate
     python3 -m pytest -q tests     # includes the DRAM worked example
     python3 -m flowtracker.top     # today's top 10 scored contracts (add a number for more)
 All thresholds are in the `scoring:` section of `config.yaml`.
+
+### Mock history simulator
+    python3 -m flowtracker.simulate          # backfill 32 fake trading days
+    python3 -m flowtracker.fetch             # then add today's scan
+    python3 -m flowtracker.simulate --clear  # remove the fake history (before using real data)
